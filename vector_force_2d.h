@@ -3,8 +3,10 @@
 
 class VectorForce2D {
 public:
-  float force_axis_x_;
-  float force_axis_y_;
+  VectorForce2D() = default;
+  VectorForce2D(float x, float y);
+  float force_axis_x_ = 0;
+  float force_axis_y_ = 0;
 
   float Force() const;
 };

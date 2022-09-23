@@ -3,7 +3,7 @@
 #include <cmath>
 #include <glut/glut.h>
 
-void DrawCircle(const Position2D &pos, int radius, const RGBA &color,
+void DrawCircle(const Position2D &pos, int radius, const RGBAf &color,
                 __unused float step_width) {
   glColor4f(std::get<0>(color), std::get<1>(color), std::get<2>(color),
             std::get<3>(color));
@@ -16,9 +16,10 @@ void DrawCircle(const Position2D &pos, int radius, const RGBA &color,
     glVertex2d(pos.x + x, pos.y + y);
   }
   glEnd();
+  glFlush();
 }
 
-void DrawCircle(const Position2D &pos, int radius, const RGBA &color) {
+void DrawCircle(const Position2D &pos, int radius, const RGBAf &color) {
   glColor4f(std::get<0>(color), std::get<1>(color), std::get<2>(color),
             std::get<3>(color));
   glBegin(GL_POLYGON); // Middle circle
@@ -30,4 +31,5 @@ void DrawCircle(const Position2D &pos, int radius, const RGBA &color) {
     glVertex2d(pos.x + x, pos.y + y);
   }
   glEnd();
+  glFlush();
 }
