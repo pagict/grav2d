@@ -10,9 +10,14 @@
 #include <memory>
 #include <rapidjson/document.h>
 #include <rapidjson/filereadstream.h>
+#include <rapidjson/reader.h>
+#include <spdlog/spdlog.h>
 
 DEFINE_string(universal_conf, "universe.json", "a json defines planets");
 DEFINE_uint32(draw_interval, 5, "in multiple of 100 milliseconds");
+DEFINE_bool(draw_aux, false, "draw auxilary lines");
+
+std::unique_ptr<spdlog::logger> grav2d_logger;
 
 int main(int argc, char **argv) {
   gflags::SetUsageMessage("./grav2");
@@ -33,7 +38,7 @@ int main(int argc, char **argv) {
   char buffer[kBufSize];
   rapidjson::FileReadStream frs(pfile.get(), buffer, kBufSize);
 
-  d.ParseStream(frs);
+  d.ParseStream<rapidjson::kParseCommentsFlag>(frs);
   const auto &json_planets = d["planets"].GetArray();
   for (const auto &p : json_planets) {
     const auto &pos = p["position"];

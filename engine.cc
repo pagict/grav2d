@@ -8,6 +8,7 @@
 #include <OpenGL/gl.h>
 #include <OpenGL/glu.h>
 #include <gflags/gflags.h>
+#include <spdlog/spdlog.h>
 
 #include "colors.h"
 #include "opengl_utility.h"
@@ -16,6 +17,7 @@
 Engine engine;
 
 DECLARE_uint32(draw_interval);
+DECLARE_bool(draw_aux);
 
 void EngineDisplay() { engine.Display(); }
 void EngineTimer(int val) { engine.TimerFlush(); }
@@ -110,6 +112,8 @@ int Engine::TimerFlush() {
       entites_[j].p.origin.y += delta_s_y;
       entites_[j].velocity.force_axis_x_ += delta_v_x;
       entites_[j].velocity.force_axis_y_ += delta_v_y;
+
+      spdlog::logger lg;
     }
   }
   static int count = 0;
