@@ -1,6 +1,8 @@
 #include "engine.h"
 
+#include <_types/_uint64_t.h>
 #include <cmath>
+#include <memory>
 #include <tuple>
 #include <utility>
 
@@ -14,10 +16,13 @@
 #include "opengl_utility.h"
 #include "planet_2d.h"
 
+extern std::shared_ptr<spdlog::logger> grav2d_logger;
+
 Engine engine;
 
 DECLARE_uint32(draw_interval);
-DECLARE_bool(draw_aux);
+DECLARE_int64(recalc_cnt);
+DECLARE_uint32(recalc_millisec);
 
 void EngineDisplay() { engine.Display(); }
 void EngineTimer(int val) { engine.TimerFlush(); }
@@ -54,7 +59,7 @@ int Engine::EngineInit(int sx, int sy, RGBAf bgcolor) {
              -(double)size_y / 2 - kMargin, (double)(size_y) / 2 + kMargin);
 
   glutDisplayFunc(EngineDisplay);
-  glutTimerFunc(kFlushIntervalMillisec, EngineTimer, 0);
+  glutTimerFunc(FLAGS_draw_interval, EngineTimer, 0);
   return 0;
 }
 
@@ -68,7 +73,7 @@ int Engine::Display() {
 
 int Engine::TimerFlush() {
   glClear(GL_COLOR_BUFFER_BIT);
-  const auto kIntervalSec = (double)kFlushIntervalMillisec / 1000;
+  const auto kIntervalSec = (double)FLAGS_recalc_millisec / 1000;
   const auto kIntervalMillisecSquareHalf = kIntervalSec * kIntervalSec / 2;
   for (auto i = 0u; i < entites_.size(); ++i) {
     for (auto j = i + 1; j < entites_.size(); ++j) {
@@ -81,6 +86,7 @@ int Engine::TimerFlush() {
 
       auto distance = std::sqrt(diff_x * diff_x + diff_y * diff_y);
       auto vvv = std::sqrt(forces.Force() * distance / entites_[i].p.weight);
+      grav2d_logger->trace("vvv={} distance={}", vvv, distance);
 
       auto delta_s_x = forces.force_axis_x_ * kIntervalMillisecSquareHalf /
                            entites_[i].p.weight +
@@ -92,10 +98,18 @@ int Engine::TimerFlush() {
           forces.force_axis_x_ * kIntervalSec / entites_[i].p.weight;
       auto delta_v_y =
           forces.force_axis_y_ * kIntervalSec / entites_[i].p.weight;
+
       entites_[i].p.origin.x += delta_s_x;
       entites_[i].p.origin.y += delta_s_y;
       entites_[i].velocity.force_axis_x_ += delta_v_x;
       entites_[i].velocity.force_axis_y_ += delta_v_y;
+
+      grav2d_logger->debug(
+          "planet[{}] dSx={} dSy={} dVx={} dVy={}, to "
+          "pos[{},{}], velocity[{},{}]={}",
+          i, delta_s_x, delta_s_y, delta_v_x, delta_v_y, entites_[i].p.origin.x,
+          entites_[i].p.origin.y, entites_[i].velocity.force_axis_x_,
+          entites_[i].velocity.force_axis_y_, entites_[i].velocity.Force());
 
       forces.force_axis_x_ *= -1;
       forces.force_axis_y_ *= -1;
@@ -113,14 +127,27 @@ int Engine::TimerFlush() {
       entites_[j].velocity.force_axis_x_ += delta_v_x;
       entites_[j].velocity.force_axis_y_ += delta_v_y;
 
-      spdlog::logger lg;
+      grav2d_logger->debug(
+          "planet[{}] dSx={} dSy={} dVx={} dVy={}, to "
+          "pos[{},{}], velocity[{},{}]={}",
+          j, delta_s_x, delta_s_y, delta_v_x, delta_v_y, entites_[j].p.origin.x,
+          entites_[j].p.origin.y, entites_[j].velocity.force_axis_x_,
+          entites_[j].velocity.force_axis_y_, entites_[j].velocity.Force());
     }
+
+    grav2d_logger->info("planet[{}] now at[{},{}] velocity[{},{}]={}", i,
+                        entites_[i].p.origin.x, entites_[i].p.origin.y,
+                        entites_[i].velocity.force_axis_x_,
+                        entites_[i].velocity.force_axis_y_,
+                        entites_[i].velocity.Force());
   }
-  static int count = 0;
+  static uint64_t count = 0;
   if (count % FLAGS_draw_interval == 0) {
     glutPostRedisplay();
   }
   ++count;
-  glutTimerFunc(kFlushIntervalMillisec, EngineTimer, 0);
+  if (FLAGS_recalc_cnt < 0 || count < FLAGS_recalc_cnt) {
+    glutTimerFunc(FLAGS_recalc_millisec, EngineTimer, 0);
+  }
   return 0;
 }

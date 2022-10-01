@@ -10,24 +10,24 @@
     }
   },
   "planets": [
-    {
-      "position": {
-        "x": 0,
-        "y": 0,
-        "radius": 10
-      },
-      "weight": 1,
-      "color": {
-        "red": 1,
-        "green": 1,
-        "blue": 1,
-        "alpha": 1
-      },
-      "velocity": {
-        "x": 8,
-        "y": 0
-      }
-    },
+    // {
+    //   "position": {
+    //     "x": 0,
+    //     "y": 0,
+    //     "radius": 10
+    //   },
+    //   "weight": 1,
+    //   "color": {
+    //     "red": 1,
+    //     "green": 1,
+    //     "blue": 1,
+    //     "alpha": 1
+    //   },
+    //   "velocity": {
+    //     "x": 7.0,
+    //     "y": 0
+    //   }
+    // },
     {
       "position": {
         "x": 0,
@@ -45,25 +45,24 @@
         "x": 0,
         "y": 0
       }
+    },
+    {
+      "position": {
+        "x": 100,
+        "y": 200,
+        "radius": 50
+      },
+      "weight": 500,
+      "color": {
+        "red": 0,
+        "green": 1,
+        "blue": 0.5,
+        "alpha": 0.2
+      },
+      "velocity": {
+        "x": 0,
+        "y": 0
+      }
     }
-    // },
-    // {
-    //   "position": {
-    //     "x": 100,
-    //     "y": 200,
-    //     "radius": 20
-    //   },
-    //   "weight": 100,
-    //   "color": {
-    //     "red": 0,
-    //     "green": 1,
-    //     "blue": 1,
-    //     "alpha": 0.2
-    //   },
-    //   "velocity": {
-    //     "x": 0,
-    //     "y": 0
-    //   }
-    // }
   ]
 }

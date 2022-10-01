@@ -3,6 +3,7 @@
 #include "planet_2d.h"
 #include "vector_force_2d.h"
 #include <algorithm>
+#include <array>
 #include <cstdio>
 #include <cstdlib>
 #include <fstream>
@@ -11,13 +12,29 @@
 #include <rapidjson/document.h>
 #include <rapidjson/filereadstream.h>
 #include <rapidjson/reader.h>
+#include <spdlog/logger.h>
+#include <spdlog/sinks/basic_file_sink.h>
 #include <spdlog/spdlog.h>
+#include <utility>
 
 DEFINE_string(universal_conf, "universe.json", "a json defines planets");
-DEFINE_uint32(draw_interval, 5, "in multiple of 100 milliseconds");
-DEFINE_bool(draw_aux, false, "draw auxilary lines");
+DEFINE_uint32(recalc_millisec, 100, "recalculate interval");
+DEFINE_uint32(draw_interval, 5,
+              "in multiple of `recalc_millisec` milliseconds");
+DEFINE_int64(recalc_cnt, -1,
+             "only recalc this times. -1 means infinity update");
+DEFINE_string(log_level, "info", "trace|debug|info|warning|error|critical|off");
 
-std::unique_ptr<spdlog::logger> grav2d_logger;
+// static std::array<std::pair<std::string, spdlog::level::level_enum>, 7>
+//     loglevel_names{{{"trace", spdlog::level::trace},
+//                     {"debug", spdlog::level::debug},
+//                     {"info", spdlog::level::info},
+//                     {"warn", spdlog::level::warn},
+//                     {"error", spdlog::level::err},
+//                     {"critical", spdlog::level::critical},
+//                     {"off", spdlog::level::off}}};
+
+std::shared_ptr<spdlog::logger> grav2d_logger;
 
 int main(int argc, char **argv) {
   gflags::SetUsageMessage("./grav2");
@@ -63,6 +80,10 @@ int main(int argc, char **argv) {
 
     engine.AddPlanet(std::move(p2d), std::move(v2d));
   }
+
+  grav2d_logger = spdlog::basic_logger_st("grav2d", "grav2d.log", true);
+  grav2d_logger->set_level(spdlog::level::from_str(FLAGS_log_level));
+  grav2d_logger->info("making a round...");
 
   const auto &galaxy_cfg = d["galaxy"];
   auto galaxy_size_x = galaxy_cfg["width"].GetInt();

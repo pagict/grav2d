@@ -33,7 +33,6 @@ private:
 
   int size_x = 1360;
   int size_y = 768;
-  const unsigned kFlushIntervalMillisec = 100;
   const char *kWindowTitle = "grav2d";
 };
 
