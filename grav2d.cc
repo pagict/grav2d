@@ -83,6 +83,7 @@ int main(int argc, char **argv) {
 
   grav2d_logger = spdlog::basic_logger_st("grav2d", "grav2d.log", true);
   grav2d_logger->set_level(spdlog::level::from_str(FLAGS_log_level));
+  grav2d_logger->set_pattern("[%H:%M:%S.%e][%L] %v");
   grav2d_logger->info("making a round...");
 
   const auto &galaxy_cfg = d["galaxy"];

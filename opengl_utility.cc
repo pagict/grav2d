@@ -9,7 +9,7 @@ void DrawCircle(const Position2D &pos, int radius, const RGBAf &color,
   glColor4f(std::get<0>(color), std::get<1>(color), std::get<2>(color),
             std::get<3>(color));
   glBegin(GL_POLYGON); // Middle circle
-  const auto kConst = 300;
+  const auto kConst = 400;
   for (int i = 0; i <= kConst; i++) {
     double angle = 2 * M_PI * i / kConst;
     double x = cos(angle) * radius;
@@ -28,7 +28,7 @@ void DrawCircle(const Position2D &pos, float radius, const RGBAf &color) {
   glColor4f(std::get<0>(color), std::get<1>(color), std::get<2>(color),
             std::get<3>(color));
   glBegin(GL_POLYGON); // Middle circle
-  const auto kConst = 300;
+  const auto kConst = 400;
   for (int i = 0; i <= kConst; i++) {
     double angle = 2 * M_PI * i / kConst;
     double x = cos(angle) * radius;

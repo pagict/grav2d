@@ -8,6 +8,11 @@
 #include "planet_2d.h"
 #include "vector_force_2d.h"
 
+enum TimerType {
+  RECALC = 1,
+  REDRAW = 2,
+};
+
 class Engine {
 public:
   int EngineInit(int sx, int sy, RGBAf bgcolor);
@@ -21,7 +26,7 @@ public:
 
 public:
   int Display();
-  int TimerFlush();
+  int Recalc();
 
 private:
   using MovingEntity = struct {
