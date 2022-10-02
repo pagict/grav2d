@@ -1,4 +1,5 @@
 
 ## TODO
 
-- [ ] flickering when redraw
+- [ x ] flickering when redraw
+- [ ] bounce back at border

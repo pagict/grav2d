@@ -36,7 +36,6 @@ void DrawCircle(const Position2D &pos, float radius, const RGBAf &color) {
     glVertex2d(pos.x + x, pos.y + y);
   }
   glEnd();
-  glFlush();
 }
 
 void DrawPoint(const Position2D &pos, const RGBAf &color) {

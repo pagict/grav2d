@@ -39,6 +39,8 @@ void EngineTimer(int val) {
   }
 }
 
+void EngineIdle() { glutPostRedisplay(); }
+
 int Engine::AddPlanet(Planet2D &&p2d, VectorForce2D &&v2d) {
   entites_.push_back({.p = std::move(p2d), .velocity = v2d});
   return 0;
@@ -50,7 +52,7 @@ int Engine::EngineInit(int sx, int sy, RGBAf bgcolor) {
 
   int argc = 0;
   glutInit(&argc, nullptr);
-  glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB);
+  glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB);
   glutInitWindowSize(size_x, size_y);
   glutInitWindowPosition(0, 0);
   glutCreateWindow(kWindowTitle);
@@ -64,11 +66,11 @@ int Engine::EngineInit(int sx, int sy, RGBAf bgcolor) {
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity();
 
-  const auto kMargin = 36u;
   gluOrtho2D(-(double)(size_x) / 2, (double)(size_x) / 2, -(double)size_y / 2,
              (double)(size_y) / 2);
 
   glutDisplayFunc(EngineDisplay);
+  glutIdleFunc(EngineIdle);
   glutTimerFunc(FLAGS_recalc_millisec, EngineTimer, RECALC);
   glutTimerFunc(FLAGS_draw_interval * FLAGS_recalc_millisec, EngineTimer,
                 REDRAW);
@@ -80,7 +82,8 @@ int Engine::Display() {
   for (const auto &en : entites_) {
     DrawCircle(en.p.origin, en.p.radius, en.p.color);
   }
-
+  glutSwapBuffers();
+  // glFlush();
   return 0;
 }
 
