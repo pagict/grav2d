@@ -36,9 +36,19 @@ private:
 
   std::vector<MovingEntity> entites_;
 
+  std::vector<Planet2D> background_stars_;
+
+  void GenerateBackgroundStars(unsigned count);
+  void ShuffleBackground();
+
   int size_x = 1360;
   int size_y = 768;
   const char *kWindowTitle = "grav2d";
+
+  // update the entity if border bouncing happens, and return
+  // the border 0-3 correspond to left top right bottom
+  // or -1 means no bouncing happened.
+  int BorderBounce(decltype(entites_)::value_type &entity) const;
 };
 
 extern Engine engine;

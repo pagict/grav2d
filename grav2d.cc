@@ -1,21 +1,24 @@
-#include "colors.h"
-#include "engine.h"
-#include "planet_2d.h"
-#include "vector_force_2d.h"
+
 #include <algorithm>
 #include <array>
 #include <cstdio>
 #include <cstdlib>
 #include <fstream>
-#include <gflags/gflags.h>
 #include <memory>
+#include <utility>
+
+#include <gflags/gflags.h>
 #include <rapidjson/document.h>
 #include <rapidjson/filereadstream.h>
 #include <rapidjson/reader.h>
 #include <spdlog/logger.h>
 #include <spdlog/sinks/basic_file_sink.h>
 #include <spdlog/spdlog.h>
-#include <utility>
+
+#include "colors.h"
+#include "engine.h"
+#include "planet_2d.h"
+#include "vector_force_2d.h"
 
 DEFINE_string(universal_conf, "universe.json", "a json defines planets");
 DEFINE_uint32(recalc_millisec, 100, "recalculate interval");
@@ -24,17 +27,9 @@ DEFINE_uint32(draw_interval, 5,
 DEFINE_int64(recalc_cnt, -1,
              "only recalc this times. -1 means infinity update");
 DEFINE_string(log_level, "info", "trace|debug|info|warning|error|critical|off");
+DEFINE_uint32(density, 1, "the density of a plenty, use for weight calc");
 
-// static std::array<std::pair<std::string, spdlog::level::level_enum>, 7>
-//     loglevel_names{{{"trace", spdlog::level::trace},
-//                     {"debug", spdlog::level::debug},
-//                     {"info", spdlog::level::info},
-//                     {"warn", spdlog::level::warn},
-//                     {"error", spdlog::level::err},
-//                     {"critical", spdlog::level::critical},
-//                     {"off", spdlog::level::off}}};
-
-std::shared_ptr<spdlog::logger> grav2d_logger;
+unsigned bg_stars = 800;
 
 int main(int argc, char **argv) {
   gflags::SetUsageMessage("./grav2");
@@ -70,7 +65,11 @@ int main(int argc, char **argv) {
     const auto &velocity = p["velocity"];
     auto v_x = velocity["x"].GetDouble();
     auto v_y = velocity["y"].GetDouble();
-    double weight = p["weight"].GetDouble();
+    double density = FLAGS_density;
+    if (p.HasMember("density")) {
+      density = p["density"].GetDouble();
+    }
+    auto weight = radius * radius * M_PI * density;
 
     Planet2D p2d{.origin = {.x = pos_x, .y = pos_y},
                  .radius = radius,
@@ -81,10 +80,11 @@ int main(int argc, char **argv) {
     engine.AddPlanet(std::move(p2d), std::move(v2d));
   }
 
-  grav2d_logger = spdlog::basic_logger_st("grav2d", "grav2d.log", true);
+  auto grav2d_logger = spdlog::basic_logger_st("grav2d", "grav2d.log", true);
   grav2d_logger->set_level(spdlog::level::from_str(FLAGS_log_level));
-  grav2d_logger->set_pattern("[%H:%M:%S.%e][%L] %v");
-  grav2d_logger->info("making a round...");
+  grav2d_logger->set_pattern("[%H:%M:%S.%e][%L][%@] %v");
+  spdlog::set_default_logger(grav2d_logger);
+  SPDLOG_INFO("starting a round...");
 
   const auto &galaxy_cfg = d["galaxy"];
   auto galaxy_size_x = galaxy_cfg["width"].GetInt();
@@ -93,6 +93,7 @@ int main(int argc, char **argv) {
   RGBAf bgcolor{bgcolor_cfg["red"].GetFloat(), bgcolor_cfg["green"].GetFloat(),
                 bgcolor_cfg["blue"].GetFloat(),
                 bgcolor_cfg["alpha"].GetFloat()};
+  bg_stars = bgcolor_cfg["stars"].GetUint();
 
   engine.EngineInit(galaxy_size_x, galaxy_size_y, bgcolor);
   engine.Run();

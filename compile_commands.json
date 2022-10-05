@@ -1,0 +1,19 @@
+[
+  {
+    "arguments": [
+      "/usr/bin/c++",
+      "-std=c++14",
+      "-DSPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_TRACE",
+      "-I/opt/homebrew/include/",
+      "-O0",
+      "-g3",
+      "-c",
+      "-o",
+      "engine.o",
+      "engine.cc"
+    ],
+    "directory": "/Users/premium/Developer/grav2d",
+    "file": "/Users/premium/Developer/grav2d/engine.cc",
+    "output": "/Users/premium/Developer/grav2d/engine.o"
+  }
+]

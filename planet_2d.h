@@ -4,8 +4,6 @@
 #ifndef _GRAV2D_PLANET2D_H_
 #define _GRAV2D_PLANET2D_H_
 
-#include <functional>
-
 #include "colors.h"
 #include "position_2d.h"
 #include "vector_force_2d.h"

@@ -4,7 +4,7 @@
 #include <limits>
 
 namespace {
-float kGravityConstant = 9.8;
+float kGravityConstant = 6.67;
 }
 
 double Planet2D::DistanceSquare(const Planet2D &p) const {

@@ -44,5 +44,4 @@ void DrawPoint(const Position2D &pos, const RGBAf &color) {
   glBegin(GL_POINTS);
   glVertex2d(pos.x, pos.y);
   glEnd();
-  glFlush();
 }

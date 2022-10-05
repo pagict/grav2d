@@ -5,6 +5,7 @@ OBJS = $(SRC:.cc=.o)
 FRAMEWORK := -framework glut -framework opengl -lgflags
 FRAMEWORK += -lspdlog -lfmt -L/opt/homebrew/lib
 CXXFLAGS := -std=c++14
+CXXFLAGS += -DSPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_TRACE
 CFLAGS := -O0 -g3
 CXXFLAGS += -I/opt/homebrew/include/
 CXXFLAGS += ${CFLAGS}
