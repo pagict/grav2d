@@ -1,1 +1,3 @@
 *.o
+.cache
+grav2d
