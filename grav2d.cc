@@ -28,6 +28,7 @@ DEFINE_int64(recalc_cnt, -1,
              "only recalc this times. -1 means infinity update");
 DEFINE_string(log_level, "info", "trace|debug|info|warning|error|critical|off");
 DEFINE_uint32(density, 1, "the density of a plenty, use for weight calc");
+DEFINE_uint32(history_tracks, 100, "history track length");
 
 unsigned bg_stars = 800;
 
@@ -71,10 +72,8 @@ int main(int argc, char **argv) {
     }
     auto weight = radius * radius * M_PI * density;
 
-    Planet2D p2d{.origin = {.x = pos_x, .y = pos_y},
-                 .radius = radius,
-                 .weight = weight,
-                 .color = {redf, greenf, bluef, alpha}};
+    Planet2D p2d{
+        {.x = pos_x, .y = pos_y}, radius, weight, {redf, greenf, bluef, alpha}};
     VectorForce2D v2d(v_x, v_y);
 
     engine.AddPlanet(std::move(p2d), std::move(v2d));

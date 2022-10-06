@@ -3,6 +3,7 @@
 #include <_types/_uint64_t.h>
 #include <cmath>
 #include <cstdlib>
+#include <iterator>
 #include <memory>
 #include <tuple>
 #include <utility>
@@ -57,10 +58,8 @@ void Engine::GenerateBackgroundStars(unsigned count) {
     if (rand() % 2) {
       y *= -1;
     }
-    background_stars_.push_back(Planet2D({.origin = {.x = x, .y = y},
-                                          .radius = 1,
-                                          .weight = M_PI,
-                                          .color = {1.0, 1.0, 1.0, 1.0}}));
+    background_stars_.push_back(
+        Planet2D({{.x = x, .y = y}, 1, M_PI, {1.0, 1.0, 1.0, 1.0}}));
   }
 }
 
@@ -84,16 +83,18 @@ void Engine::ShuffleBackground() {
     if (rand() % 2) {
       delta_y *= -1;
     }
-    bg_star.origin.x += delta_x;
-    if (bg_star.origin.x > (size_x / 2) || bg_star.origin.x < -(size_x / 2)) {
-      bg_star.origin.x = rand() % (size_x / 2);
-      bg_star.origin.x *= (rand() % 2 ? 1 : -1);
+    auto pos = bg_star.Position();
+    pos.x += delta_x;
+    if (pos.x > (size_x / 2) || pos.x < -(size_x / 2)) {
+      pos.x = rand() % (size_x / 2);
+      pos.x *= (rand() % 2 ? 1 : -1);
     }
-    bg_star.origin.y += delta_y;
-    if (bg_star.origin.y > (size_y / 2) || bg_star.origin.y < -(size_y / 2)) {
-      bg_star.origin.y = rand() % (size_y / 2);
-      bg_star.origin.y *= (rand() % 2 ? 1 : -1);
+    pos.y += delta_y;
+    if (pos.y > (size_y / 2) || pos.y < -(size_y / 2)) {
+      pos.y = rand() % (size_y / 2);
+      pos.y *= (rand() % 2 ? 1 : -1);
     }
+    bg_star.Move(pos);
   }
 }
 
@@ -113,6 +114,8 @@ int Engine::EngineInit(int sx, int sy, RGBAf bgcolor) {
   glClear(GL_COLOR_BUFFER_BIT);
 
   // glColor3f(0.0f, 1.0f, 0.0f);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  glEnable(GL_BLEND);
   glPointSize(1.0);
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity();
@@ -131,12 +134,29 @@ int Engine::EngineInit(int sx, int sy, RGBAf bgcolor) {
 int Engine::Display() {
   glClear(GL_COLOR_BUFFER_BIT);
   for (const auto &en : entites_) {
-    DrawCircle(en.p.origin, en.p.radius, en.p.color);
+    auto r = en.p.Radius();
+    auto color = en.p.Color();
+    DrawCircle(en.p.Position(), r, color);
+
+    const unsigned kAlphaIndex = 3;
+    std::get<kAlphaIndex>(color) = 0.05;
+    const auto tracks = en.p.Tracks();
+    const auto track_sz = tracks.size();
+    const auto radius_grad = r / track_sz;
+    const auto alpha_grad = std::get<kAlphaIndex>(color) / track_sz;
+    auto iter = tracks.begin();
+    for (auto i = 0u; i < track_sz; ++i) {
+      DrawCircle(*iter, r, color);
+
+      std::advance(iter, 1);
+      r -= radius_grad;
+      std::get<kAlphaIndex>(color) -= alpha_grad;
+    }
   }
 
   ShuffleBackground();
   for (const auto &en : background_stars_) {
-    DrawPoint(en.origin, en.color);
+    DrawPoint(en.Position(), en.Color());
   }
   glutSwapBuffers();
   // glFlush();
@@ -155,19 +175,19 @@ int Engine::Recalc() {
     for (auto j = i + 1; j < entites_.size(); ++j) {
 
       auto forces = Gravity(entites_[i].p, entites_[j].p);
-      auto diff_x = entites_[j].p.origin.x - entites_[i].p.origin.x;
-      auto diff_y = entites_[j].p.origin.y - entites_[i].p.origin.y;
+      auto diff_x = entites_[j].p.Position().x - entites_[i].p.Position().x;
+      auto diff_y = entites_[j].p.Position().y - entites_[i].p.Position().y;
       forces.force_axis_x_ *= (diff_x < 0 ? -1 : 1);
       forces.force_axis_y_ *= (diff_y < 0 ? -1 : 1);
 
       auto delta_s_x = forces.force_axis_x_ * kIntervalMillisecSquareHalf /
-                       entites_[i].p.weight;
+                       entites_[i].p.Weight();
       auto delta_s_y = forces.force_axis_y_ * kIntervalMillisecSquareHalf /
-                       entites_[i].p.weight;
+                       entites_[i].p.Weight();
       auto delta_v_x =
-          forces.force_axis_x_ * kIntervalSec / entites_[i].p.weight;
+          forces.force_axis_x_ * kIntervalSec / entites_[i].p.Weight();
       auto delta_v_y =
-          forces.force_axis_y_ * kIntervalSec / entites_[i].p.weight;
+          forces.force_axis_y_ * kIntervalSec / entites_[i].p.Weight();
 
       deltas[i][0] += delta_s_x;
       deltas[i][1] += delta_s_y;
@@ -177,13 +197,13 @@ int Engine::Recalc() {
       forces.force_axis_x_ *= -1;
       forces.force_axis_y_ *= -1;
       delta_s_x = forces.force_axis_x_ * kIntervalMillisecSquareHalf /
-                      entites_[j].p.weight +
+                      entites_[j].p.Weight() +
                   entites_[j].velocity.force_axis_x_ * kIntervalSec;
       delta_s_y = forces.force_axis_y_ * kIntervalMillisecSquareHalf /
-                      entites_[j].p.weight +
+                      entites_[j].p.Weight() +
                   entites_[j].velocity.force_axis_y_ * kIntervalSec;
-      delta_v_x = forces.force_axis_x_ * kIntervalSec / entites_[j].p.weight;
-      delta_v_y = forces.force_axis_y_ * kIntervalSec / entites_[j].p.weight;
+      delta_v_x = forces.force_axis_x_ * kIntervalSec / entites_[j].p.Weight();
+      delta_v_y = forces.force_axis_y_ * kIntervalSec / entites_[j].p.Weight();
 
       deltas[j][0] += delta_s_x;
       deltas[j][1] += delta_s_y;
@@ -192,14 +212,16 @@ int Engine::Recalc() {
     }
   }
   for (auto i = 0u; i < entites_.size(); ++i) {
+    auto pos = entites_[i].p.Position();
     SPDLOG_TRACE("planet[{}] before update, loc[{:.3f},{:.3f}], "
                  "vel[{:.3f},{:.3f}]={:.3f}",
-                 i, entites_[i].p.origin.x, entites_[i].p.origin.y,
-                 entites_[i].velocity.force_axis_x_,
+                 i, pos.x, pos.y, entites_[i].velocity.force_axis_x_,
                  entites_[i].velocity.force_axis_y_,
                  entites_[i].velocity.Force());
-    entites_[i].p.origin.x += deltas[i][0];
-    entites_[i].p.origin.y += deltas[i][1];
+
+    pos.x += deltas[i][0];
+    pos.y += deltas[i][1];
+    entites_[i].p.Move(pos);
     entites_[i].velocity.force_axis_x_ += deltas[i][2];
     entites_[i].velocity.force_axis_y_ += deltas[i][3];
 
@@ -207,10 +229,9 @@ int Engine::Recalc() {
     SPDLOG_INFO(
         "planet[{}] now at[{:.3f},{:.3f}] velocity[{:.3f},{:.3f}]={:.3f}, "
         "dS=[{:.3f},{:.3f}], dV=[{:.3f},{:.3f}], border_bouce[{}]",
-        i, entites_[i].p.origin.x, entites_[i].p.origin.y,
-        entites_[i].velocity.force_axis_x_, entites_[i].velocity.force_axis_y_,
-        entites_[i].velocity.Force(), deltas[i][0], deltas[i][1], deltas[i][2],
-        deltas[i][3], bb_ret);
+        i, pos.x, pos.y, entites_[i].velocity.force_axis_x_,
+        entites_[i].velocity.force_axis_y_, entites_[i].velocity.Force(),
+        deltas[i][0], deltas[i][1], deltas[i][2], deltas[i][3], bb_ret);
   }
   static uint64_t count = 0;
   ++count;
@@ -223,34 +244,39 @@ int Engine::Recalc() {
 int Engine::BorderBounce(decltype(Engine::entites_)::value_type &entity) const {
   const auto kHalfX = size_x / 2;
   const auto kHalfY = size_y / 2;
-  if (entity.p.origin.x < -kHalfX) {
+  auto pos = entity.p.Position();
+  if (pos.x < -kHalfX) {
     SPDLOG_TRACE("hit left border[x({:.3f})<left_bder({})], speed[{:.3f}]",
-                 entity.p.origin.x, -kHalfX, entity.velocity.force_axis_x_);
-    entity.p.origin.x = -size_x - entity.p.origin.x;
+                 pos.x, -kHalfX, entity.velocity.force_axis_x_);
+    pos.x = -size_x - pos.x;
+    entity.p.Move(pos);
     if (entity.velocity.force_axis_x_ < 0) {
       entity.velocity.force_axis_x_ *= -1;
     }
     return 0;
-  } else if (entity.p.origin.x > kHalfX) {
+  } else if (pos.x > kHalfX) {
     SPDLOG_TRACE("hit right border[x({:.3f})>right_bder({})], speed[{:.3f}]",
-                 entity.p.origin.x, kHalfX, entity.velocity.force_axis_x_);
-    entity.p.origin.x = size_x - entity.p.origin.x;
+                 pos.x, kHalfX, entity.velocity.force_axis_x_);
+    pos.x = size_x - pos.x;
+    entity.p.Move(pos);
     if (entity.velocity.force_axis_x_ > 0) {
       entity.velocity.force_axis_x_ *= -1;
     }
     return 2;
-  } else if (entity.p.origin.y < -kHalfY) {
-    SPDLOG_TRACE("hit top border[y({:.3f})<top_bder({})], speed[{:.3f}]",
-                 entity.p.origin.y, -kHalfY, entity.velocity.force_axis_y_);
-    entity.p.origin.y = -size_y - entity.p.origin.y;
+  } else if (pos.y < -kHalfY) {
+    SPDLOG_TRACE("hit top border[y({:.3f})<top_bder({})], speed[{:.3f}]", pos.y,
+                 -kHalfY, entity.velocity.force_axis_y_);
+    pos.y = -size_y - pos.y;
+    entity.p.Move(pos);
     if (entity.velocity.force_axis_y_ < 0) {
       entity.velocity.force_axis_y_ *= -1;
     }
     return 1;
-  } else if (entity.p.origin.y > kHalfY) {
+  } else if (pos.y > kHalfY) {
     SPDLOG_TRACE("hit bottom border[y({:.3f})>bottom_bder({})], speed[{:.3f}]",
-                 entity.p.origin.y, kHalfY, entity.velocity.force_axis_y_);
-    entity.p.origin.y = size_y - entity.p.origin.y;
+                 pos.y, kHalfY, entity.velocity.force_axis_y_);
+    pos.y = size_y - pos.y;
+    entity.p.Move(pos);
     if (entity.velocity.force_axis_y_ > 0) {
       entity.velocity.force_axis_y_ *= -1;
     }
