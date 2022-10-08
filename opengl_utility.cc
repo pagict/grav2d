@@ -1,8 +1,10 @@
 #include "opengl_utility.h"
+#include "colors.h"
 #include <cmath>
 
 #include <OpenGL/gl.h>
 #include <glut/glut.h>
+#include <vector>
 
 void DrawCircle(const Position2D &pos, int radius, const RGBAf &color,
                 __unused float step_width) {
@@ -43,5 +45,15 @@ void DrawPoint(const Position2D &pos, const RGBAf &color) {
             std::get<3>(color));
   glBegin(GL_POINTS);
   glVertex2d(pos.x, pos.y);
+  glEnd();
+}
+
+void DrawCurve(const std::vector<Position2D> &dots, const RGBAf &color) {
+  glColor4f(std::get<0>(color), std::get<1>(color), std::get<2>(color),
+            std::get<3>(color));
+  glBegin(GL_LINE_STRIP);
+  for (const auto &d : dots) {
+    glVertex2d(d.x, d.y);
+  }
   glEnd();
 }

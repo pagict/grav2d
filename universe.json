@@ -7,7 +7,7 @@
       "green": 0.1,
       "blue": 0.1,
       "alpha": 0.8,
-      "stars": 300
+      "stars": 300    // define number of  background stars
     }
   },
   "planets": [
@@ -76,8 +76,8 @@
         "alpha": 0.2
       },
       "velocity": {
-        "x": -300,
-        "y": 80
+        "x": 50,
+        "y": 23
       }
     }
   ]

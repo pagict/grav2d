@@ -1,9 +1,14 @@
 ## Introduction
-a naive universal gravitation simulator inspired by **Osmos**, a great iOS game, and **three body**, a famous fiction.
+A naive universal gravitation simulator inspired by **Osmos**, a great iOS game, and **three body**, a famous fiction.
+
+since it aims on demonstration, performance is not prior.
 
 planets in the defined limited universe(more like a box) moving around by the force field of their neighbors.
 
 To see the demo [video](res/demo.gif).
+
+use `SPACEBAR` can toggle it pause/running.
+
 ## Get Started
 1. install dependencies
 
@@ -23,5 +28,5 @@ To see the demo [video](res/demo.gif).
 - [x] use density instead of explicit weight
 - [ ] glimmering ball
 - [x] history tracks
-- [ ] predict tracks
+- [x] predict tracks
 - [ ] bug: edge point between recalc gap. Two planets moving towards each other, velocity should NOT consecutive while swapping their locations.

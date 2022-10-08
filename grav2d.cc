@@ -29,6 +29,7 @@ DEFINE_int64(recalc_cnt, -1,
 DEFINE_string(log_level, "info", "trace|debug|info|warning|error|critical|off");
 DEFINE_uint32(density, 1, "the density of a plenty, use for weight calc");
 DEFINE_uint32(history_tracks, 100, "history track length");
+DEFINE_uint32(predict_cnt, 100, "ticks when predict moving tracks");
 
 unsigned bg_stars = 800;
 

@@ -27,6 +27,8 @@ public:
 public:
   int Display();
   int Recalc();
+  int Redraw();
+  int Keyboard(unsigned char c, int x, int y);
 
 private:
   using MovingEntity = struct {
@@ -35,6 +37,7 @@ private:
   };
 
   std::vector<MovingEntity> entites_;
+  std::vector<std::vector<Position2D>> predicts_;
 
   std::vector<Planet2D> background_stars_;
 
@@ -49,6 +52,8 @@ private:
   // the border 0-3 correspond to left top right bottom
   // or -1 means no bouncing happened.
   int BorderBounce(decltype(entites_)::value_type &entity) const;
+
+  bool is_paused_ = false;
 };
 
 extern Engine engine;

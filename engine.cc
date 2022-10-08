@@ -18,12 +18,14 @@
 #include "colors.h"
 #include "opengl_utility.h"
 #include "planet_2d.h"
+#include "position_2d.h"
 
 Engine engine;
 
 DECLARE_uint32(draw_interval);
 DECLARE_int64(recalc_cnt);
 DECLARE_uint32(recalc_millisec);
+DECLARE_uint32(predict_cnt);
 
 extern unsigned bg_stars;
 
@@ -34,11 +36,36 @@ void EngineTimer(int val) {
     engine.Recalc();
     return;
   case REDRAW:
-    glutPostRedisplay();
-    glutTimerFunc(FLAGS_draw_interval * FLAGS_recalc_millisec, EngineTimer,
-                  REDRAW);
+    engine.Redraw();
     return;
   }
+}
+void EngineKeyboardFunc(unsigned char c, int x, int y) {
+  engine.Keyboard(c, x, y);
+}
+
+int Engine::Keyboard(unsigned char c, int x, int y) {
+  switch (c) {
+  case 32: // spacebar
+    is_paused_ = !is_paused_;
+    if (!is_paused_) {
+      Recalc();
+      Redraw();
+    }
+    return 0;
+  default:
+    return 1;
+  }
+}
+
+int Engine::Redraw() {
+  if (is_paused_) {
+    return 1;
+  }
+  glutPostRedisplay();
+  glutTimerFunc(FLAGS_draw_interval * FLAGS_recalc_millisec, EngineTimer,
+                REDRAW);
+  return 0;
 }
 
 void EngineIdle() { glutPostRedisplay(); }
@@ -123,17 +150,25 @@ int Engine::EngineInit(int sx, int sy, RGBAf bgcolor) {
   gluOrtho2D(-(double)(size_x) / 2, (double)(size_x) / 2, -(double)size_y / 2,
              (double)(size_y) / 2);
 
+  predicts_ = std::vector<std::vector<Position2D>>(entites_.size());
+
   glutDisplayFunc(EngineDisplay);
   glutIdleFunc(EngineIdle);
   glutTimerFunc(FLAGS_recalc_millisec, EngineTimer, RECALC);
   glutTimerFunc(FLAGS_draw_interval * FLAGS_recalc_millisec, EngineTimer,
                 REDRAW);
+  glutKeyboardFunc(EngineKeyboardFunc);
   return 0;
 }
 
 int Engine::Display() {
+  if (is_paused_) {
+    return 1;
+  }
+
   glClear(GL_COLOR_BUFFER_BIT);
-  for (const auto &en : entites_) {
+  for (auto i = 0u; i < entites_.size(); ++i) {
+    const auto &en = entites_[i];
     auto r = en.p.Radius();
     auto color = en.p.Color();
     DrawCircle(en.p.Position(), r, color);
@@ -152,6 +187,10 @@ int Engine::Display() {
       r -= radius_grad;
       std::get<kAlphaIndex>(color) -= alpha_grad;
     }
+
+    color = en.p.Color();
+    std::get<3>(color) = 0.2;
+    DrawCurve(predicts_[i], color);
   }
 
   ShuffleBackground();
@@ -159,11 +198,13 @@ int Engine::Display() {
     DrawPoint(en.Position(), en.Color());
   }
   glutSwapBuffers();
-  // glFlush();
   return 0;
 }
 
 int Engine::Recalc() {
+  if (is_paused_) {
+    return 1;
+  }
   const auto kIntervalSec = (double)FLAGS_recalc_millisec / 1000;
   const auto kIntervalMillisecSquareHalf = kIntervalSec * kIntervalSec / 2;
 
@@ -211,6 +252,7 @@ int Engine::Recalc() {
       deltas[j][3] += delta_v_y;
     }
   }
+
   for (auto i = 0u; i < entites_.size(); ++i) {
     auto pos = entites_[i].p.Position();
     SPDLOG_TRACE("planet[{}] before update, loc[{:.3f},{:.3f}], "
@@ -233,6 +275,51 @@ int Engine::Recalc() {
         entites_[i].velocity.force_axis_y_, entites_[i].velocity.Force(),
         deltas[i][0], deltas[i][1], deltas[i][2], deltas[i][3], bb_ret);
   }
+
+  for (auto i = 0u; i < entites_.size(); ++i) {
+    predicts_[i].clear();
+    auto future_entities = entites_;
+    for (auto j = 0u; j < FLAGS_predict_cnt; ++j) {
+      auto &ent_i = future_entities[i];
+      double s_x = ent_i.velocity.force_axis_x_ * kIntervalSec;
+      double s_y = ent_i.velocity.force_axis_y_ * kIntervalSec;
+      double v_x = 0;
+      double v_y = 0;
+      for (auto k = 0u; k < entites_.size(); ++k) {
+        if (k == i) {
+          continue;
+        }
+        const auto &ent_j = future_entities[k];
+        auto force = Gravity(ent_i.p, ent_j.p);
+        auto diff_x = ent_j.p.Position().x - ent_i.p.Position().x;
+        auto diff_y = ent_j.p.Position().y - ent_i.p.Position().y;
+        force.force_axis_x_ *= (diff_x < 0 ? -1 : 1);
+        force.force_axis_y_ *= (diff_y < 0 ? -1 : 1);
+
+        auto tmp_sx = force.force_axis_x_ * kIntervalMillisecSquareHalf /
+                      ent_i.p.Weight();
+        auto tmp_sy = force.force_axis_y_ * kIntervalMillisecSquareHalf /
+                      ent_i.p.Weight();
+
+        auto tmp_vx = force.force_axis_x_ * kIntervalSec / ent_i.p.Weight();
+        auto tmp_vy = force.force_axis_y_ * kIntervalSec / ent_i.p.Weight();
+
+        s_x += tmp_sx;
+        s_y += tmp_sy;
+        v_x += tmp_vx;
+        v_y += tmp_vy;
+      }
+
+      auto pos = ent_i.p.Position();
+      pos.x += s_x;
+      pos.y += s_y;
+      predicts_[i].push_back(pos);
+      ent_i.p.Move(pos);
+      ent_i.velocity.force_axis_x_ += v_x;
+      ent_i.velocity.force_axis_y_ += v_y;
+    }
+  }
+
   static uint64_t count = 0;
   ++count;
   if (FLAGS_recalc_cnt < 0 || count < FLAGS_recalc_cnt) {
