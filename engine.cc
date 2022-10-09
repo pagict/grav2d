@@ -140,7 +140,6 @@ int Engine::EngineInit(int sx, int sy, RGBAf bgcolor) {
                std::get<3>(bgcolor));
   glClear(GL_COLOR_BUFFER_BIT);
 
-  // glColor3f(0.0f, 1.0f, 0.0f);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   glEnable(GL_BLEND);
   glPointSize(1.0);
@@ -177,6 +176,7 @@ int Engine::Display() {
     std::get<kAlphaIndex>(color) = 0.05;
     const auto tracks = en.p.Tracks();
     const auto track_sz = tracks.size();
+    r *= 0.7;
     const auto radius_grad = r / track_sz;
     const auto alpha_grad = std::get<kAlphaIndex>(color) / track_sz;
     auto iter = tracks.begin();
@@ -189,7 +189,7 @@ int Engine::Display() {
     }
 
     color = en.p.Color();
-    std::get<3>(color) = 0.2;
+    std::get<3>(color) *= 0.2;
     DrawCurve(predicts_[i], color);
   }
 
@@ -208,8 +208,12 @@ int Engine::Recalc() {
   const auto kIntervalSec = (double)FLAGS_recalc_millisec / 1000;
   const auto kIntervalMillisecSquareHalf = kIntervalSec * kIntervalSec / 2;
 
+  // delta[i][0-3] means entity[i]'s delta position at x/y, delta velocity at
+  // x/y.
   std::vector<std::vector<double>> deltas(entites_.size(),
                                           std::vector<double>(4, 0.0));
+
+  // calculate delta values.
   for (auto i = 0u; i < entites_.size(); ++i) {
     deltas[i][0] += entites_[i].velocity.force_axis_x_ * kIntervalSec;
     deltas[i][1] += entites_[i].velocity.force_axis_y_ * kIntervalSec;
@@ -238,11 +242,9 @@ int Engine::Recalc() {
       forces.force_axis_x_ *= -1;
       forces.force_axis_y_ *= -1;
       delta_s_x = forces.force_axis_x_ * kIntervalMillisecSquareHalf /
-                      entites_[j].p.Weight() +
-                  entites_[j].velocity.force_axis_x_ * kIntervalSec;
+                  entites_[j].p.Weight();
       delta_s_y = forces.force_axis_y_ * kIntervalMillisecSquareHalf /
-                      entites_[j].p.Weight() +
-                  entites_[j].velocity.force_axis_y_ * kIntervalSec;
+                  entites_[j].p.Weight();
       delta_v_x = forces.force_axis_x_ * kIntervalSec / entites_[j].p.Weight();
       delta_v_y = forces.force_axis_y_ * kIntervalSec / entites_[j].p.Weight();
 
@@ -253,6 +255,7 @@ int Engine::Recalc() {
     }
   }
 
+  // update positions and velocities by their delta values
   for (auto i = 0u; i < entites_.size(); ++i) {
     auto pos = entites_[i].p.Position();
     SPDLOG_TRACE("planet[{}] before update, loc[{:.3f},{:.3f}], "
@@ -276,6 +279,7 @@ int Engine::Recalc() {
         deltas[i][0], deltas[i][1], deltas[i][2], deltas[i][3], bb_ret);
   }
 
+  // calculate predictions
   for (auto i = 0u; i < entites_.size(); ++i) {
     predicts_[i].clear();
     auto future_entities = entites_;
