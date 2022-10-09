@@ -14,7 +14,9 @@ const float kGravityConstant = 6.67;
 DECLARE_uint32(history_tracks);
 
 Planet2D::Planet2D(Position2D &&pos, double rad, double w, RGBAf &&col)
-    : origin_(pos), radius_(rad), weight_(w), color_(col) {}
+    : origin_(pos), radius_(rad), weight_(w),
+      color_({std::get<0>(col) * 255, std::get<1>(col) * 255,
+              std::get<2>(col) * 255, std::get<3>(col) * 255}) {}
 
 double Planet2D::DistanceSquare(const Planet2D &p) const {
   auto delta_x = std::abs((double)(origin_.x - p.origin_.x));

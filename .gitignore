@@ -1,3 +1,4 @@
 *.o
 .cache
 grav2d
+**/.DS_Store

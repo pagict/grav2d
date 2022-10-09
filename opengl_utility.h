@@ -11,9 +11,9 @@
 #define GL_SILENCE_DEPRECATION
 #endif // GL_SILENCE_DEPRECATION
 
-void DrawPoint(const Position2D &pos, const RGBAf &color);
-void DrawCurve(const std::vector<Position2D> &dots, const RGBAf &color);
-void DrawCircle(const Position2D &pos, float radius, const RGBAf &color);
-void DrawCircle(const Position2D &pos, int radius, const RGBAf &color,
+void DrawPoint(const Position2D &pos, const RGBAuc &color);
+void DrawCurve(const std::vector<Position2D> &dots, const RGBAuc &color);
+void DrawCircle(const Position2D &pos, float radius, const RGBAuc &color);
+void DrawCircle(const Position2D &pos, int radius, const RGBAuc &color,
                 __unused float step_width);
 #endif // !_GRAV2D_OPENGL_UTILITY_H_

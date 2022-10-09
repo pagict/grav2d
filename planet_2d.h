@@ -20,14 +20,18 @@ public:
   inline const Position2D Position() const { return origin_; }
   inline double Radius() const { return radius_; }
   inline double Weight() const { return weight_; }
-  inline RGBAf Color() const { return color_; }
+  inline RGBAf ColorF() const {
+    return {float(std::get<0>(color_)) / 255, float(std::get<1>(color_)) / 255,
+            float(std::get<2>(color_)) / 255, float(std::get<3>(color_)) / 255};
+  }
+  inline RGBAuc ColorUc() const { return color_; }
   inline const std::list<Position2D> &Tracks() const { return tracks_; }
 
 private:
   Position2D origin_;
   double radius_;
   double weight_;
-  RGBAf color_;
+  RGBAuc color_;
 
   std::list<Position2D> tracks_;
 };

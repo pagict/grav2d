@@ -169,11 +169,11 @@ int Engine::Display() {
   for (auto i = 0u; i < entites_.size(); ++i) {
     const auto &en = entites_[i];
     auto r = en.p.Radius();
-    auto color = en.p.Color();
+    auto color = en.p.ColorUc();
     DrawCircle(en.p.Position(), r, color);
 
     const unsigned kAlphaIndex = 3;
-    std::get<kAlphaIndex>(color) = 0.05;
+    std::get<kAlphaIndex>(color) *= 0.05;
     const auto tracks = en.p.Tracks();
     const auto track_sz = tracks.size();
     r *= 0.7;
@@ -188,14 +188,14 @@ int Engine::Display() {
       std::get<kAlphaIndex>(color) -= alpha_grad;
     }
 
-    color = en.p.Color();
-    std::get<3>(color) *= 0.2;
+    color = en.p.ColorUc();
+    std::get<kAlphaIndex>(color) *= 0.2;
     DrawCurve(predicts_[i], color);
   }
 
   ShuffleBackground();
   for (const auto &en : background_stars_) {
-    DrawPoint(en.Position(), en.Color());
+    DrawPoint(en.Position(), en.ColorUc());
   }
   glutSwapBuffers();
   return 0;
