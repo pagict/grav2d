@@ -5,6 +5,7 @@
 #define _GRAV2D_PLANET2D_H_
 
 #include <list>
+#include <memory>
 
 #include "colors.h"
 #include "position_2d.h"
@@ -12,7 +13,7 @@
 
 class Planet2D {
 public:
-  Planet2D(Position2D &&pos, double rad, double w, RGBAf &&col);
+  Planet2D(Position2D &&pos, double rad, double density, RGBAf &&col);
 
   double DistanceSquare(const Planet2D &p) const;
   void Move(const Position2D &new_pos);
@@ -27,8 +28,11 @@ public:
   inline RGBAuc ColorUc() const { return color_; }
   inline const std::list<Position2D> &Tracks() const { return tracks_; }
 
+  int SpawnChild(double rad, Planet2D *child);
+
 private:
   Position2D origin_;
+  double density_;
   double radius_;
   double weight_;
   RGBAuc color_;

@@ -29,6 +29,8 @@ public:
   int Recalc();
   int Redraw();
   int Keyboard(unsigned char c, int x, int y);
+  int LeftClick(int x, int y);
+  void Reshaped(int width, int height);
 
 private:
   using MovingEntity = struct {

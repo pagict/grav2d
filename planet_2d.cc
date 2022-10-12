@@ -13,8 +13,9 @@ const float kGravityConstant = 6.67;
 
 DECLARE_uint32(history_tracks);
 
-Planet2D::Planet2D(Position2D &&pos, double rad, double w, RGBAf &&col)
-    : origin_(pos), radius_(rad), weight_(w),
+Planet2D::Planet2D(Position2D &&pos, double rad, double density, RGBAf &&col)
+    : origin_(pos), density_(density), radius_(rad),
+      weight_(M_PI * rad * rad * density),
       color_({std::get<0>(col) * 255, std::get<1>(col) * 255,
               std::get<2>(col) * 255, std::get<3>(col) * 255}) {}
 
@@ -53,4 +54,19 @@ void Planet2D::Move(const Position2D &new_pos) {
   while (tracks_.size() > FLAGS_history_tracks) {
     tracks_.pop_back();
   }
+}
+
+int Planet2D::SpawnChild(double rad, Planet2D *child) {
+  if (!child) {
+    return -1;
+  }
+  if (rad >= radius_) {
+    return -2;
+  }
+
+  radius_ -= rad;
+  weight_ = M_PI * radius_ * radius_ * density_;
+  auto new_origin = origin_;
+  *child = Planet2D(std::move(new_origin), rad, density_, ColorF());
+  return 0;
 }

@@ -1,6 +1,7 @@
 #include "engine.h"
 
 #include <_types/_uint64_t.h>
+#include <algorithm>
 #include <cmath>
 #include <cstdlib>
 #include <iterator>
@@ -19,6 +20,7 @@
 #include "opengl_utility.h"
 #include "planet_2d.h"
 #include "position_2d.h"
+#include "vector_force_2d.h"
 
 Engine engine;
 
@@ -44,6 +46,33 @@ void EngineKeyboardFunc(unsigned char c, int x, int y) {
   engine.Keyboard(c, x, y);
 }
 
+void EngineMouseFunc(int btn, int state, int x, int y) {
+  if (btn == GLUT_LEFT_BUTTON && state == GLUT_DOWN) {
+    engine.LeftClick(x, y);
+  }
+}
+
+void EngineReshapeFunc(int width, int height) {
+  spdlog::enable_backtrace(32);
+  spdlog::dump_backtrace();
+  SPDLOG_TRACE("Reshaped to {}x{}", width, height);
+  width = glutGet(GLUT_WINDOW_WIDTH);
+  height = glutGet(GLUT_WINDOW_HEIGHT);
+  SPDLOG_TRACE("Reshaped dimension by get[{}]x[{}]", width, height);
+  spdlog::default_logger()->flush();
+  spdlog::disable_backtrace();
+  engine.Reshaped(width, height);
+}
+
+void Engine::Reshaped(int width, int height) {
+
+  size_x = width;
+  size_y = height;
+  gluOrtho2D(-(double)(size_x) / 2, (double)(size_x) / 2, -(double)size_y / 2,
+             (double)(size_y) / 2);
+  GenerateBackgroundStars(bg_stars);
+}
+
 int Engine::Keyboard(unsigned char c, int x, int y) {
   switch (c) {
   case 32: // spacebar
@@ -58,6 +87,85 @@ int Engine::Keyboard(unsigned char c, int x, int y) {
   }
 }
 
+int Engine::LeftClick(int x, int y) {
+  // relocate to the cordinate
+  x = x - size_x / 2;
+  y = size_y / 2 - y;
+  // split
+  auto &my_planet = entites_[0];
+  const auto &momentum_before =
+      my_planet.velocity.Force() * my_planet.p.Weight();
+  SPDLOG_TRACE("my_planet before split: R[{}] W[{}]", my_planet.p.Radius(),
+               my_planet.p.Weight());
+  auto color = kRGBfWhite;
+  Planet2D child({.x = 0.0, .y = 0.0}, 1.0f, 1.0f, std::move(color));
+  const auto kDeltaRadius = 2.0f;
+  auto split_ret = my_planet.p.SpawnChild(kDeltaRadius, &child);
+  if (split_ret < 0) {
+    SPDLOG_ERROR(
+        "SpawnChild Error[{}], R[{}] W[{}], pos[{},{}], vel[{},{}][{}]",
+        split_ret, my_planet.p.Radius(), my_planet.p.Weight(),
+        my_planet.p.Position().x, my_planet.p.Position().y,
+        my_planet.velocity.force_axis_x_, my_planet.velocity.force_axis_y_,
+        my_planet.velocity.Force());
+    return -1;
+  }
+
+  auto new_pos = my_planet.p.Position();
+  SPDLOG_TRACE("pos[{},{}], click[{}, {}]", new_pos.x, new_pos.y, x, y);
+  const auto diff_x = new_pos.x - x;
+  const auto diff_y = new_pos.y - y;
+  const auto diff_squared = (diff_x * diff_x + diff_y * diff_y);
+  const auto diff = std::sqrt(diff_squared);
+
+  const auto kDeltaDistance = kDeltaRadius + my_planet.p.Radius();
+  const auto delta_x = diff_x / diff * kDeltaDistance * -1;
+  const auto delta_y = diff_y / diff * kDeltaDistance * -1;
+  new_pos.x += delta_x;
+  new_pos.y += delta_y;
+
+  child.Move(new_pos);
+
+  const auto kDeltaVelocity = 300.0f;
+  const auto kDeltaVx = diff_x / diff * kDeltaVelocity * -1;
+  const auto kDeltaVy = diff_y / diff * kDeltaVelocity * -1;
+  AddPlanet(std::move(child), VectorForce2D(kDeltaVx, kDeltaVy));
+
+  // Conservation of momentum
+  const auto &new_planet = entites_.back();
+  const auto &my_vel = new_planet.p.Weight() * new_planet.velocity.Force() /
+                       my_planet.p.Weight();
+  const auto my_vel_x = diff_x / diff * my_vel;
+  const auto my_vel_y = diff_y / diff * my_vel;
+  my_planet.velocity.force_axis_x_ += my_vel_x;
+  my_planet.velocity.force_axis_y_ += my_vel_y;
+
+  SPDLOG_DEBUG(
+      "my_planet pos[{},{}] vel[{},{}], new planet pos[{},{}] vel[{},{}]",
+      my_planet.p.Position().x, my_planet.p.Position().y,
+      my_planet.velocity.force_axis_x_, my_planet.velocity.force_axis_y_,
+      new_planet.p.Position().x, new_planet.p.Position().y,
+      new_planet.velocity.force_axis_x_, new_planet.velocity.force_axis_y_);
+  const auto momentum_my_x =
+      my_planet.velocity.force_axis_x_ * my_planet.p.Weight();
+  const auto momentum_my_y =
+      my_planet.velocity.force_axis_y_ * my_planet.p.Weight();
+  const auto momentum_new_x =
+      new_planet.velocity.force_axis_x_ * new_planet.p.Weight();
+  const auto momentum_new_y =
+      new_planet.velocity.force_axis_y_ * new_planet.p.Weight();
+
+  SPDLOG_DEBUG("momentum [{}] -> [{}]({}+{}+{}+{}], Rmy[{}], Wmy[{}], "
+               "Rnew[{}], Wnew[{}]",
+               momentum_before,
+               momentum_my_x + momentum_my_y + momentum_new_x + momentum_new_y,
+               momentum_my_x, momentum_my_y, momentum_new_x, momentum_new_y,
+               my_planet.p.Radius(), my_planet.p.Weight(),
+               new_planet.p.Radius(), new_planet.p.Weight());
+  spdlog::default_logger()->flush();
+  return 0;
+}
+
 int Engine::Redraw() {
   if (is_paused_) {
     return 1;
@@ -68,14 +176,18 @@ int Engine::Redraw() {
   return 0;
 }
 
-void EngineIdle() { glutPostRedisplay(); }
-
 int Engine::AddPlanet(Planet2D &&p2d, VectorForce2D &&v2d) {
   entites_.push_back({.p = std::move(p2d), .velocity = v2d});
+  int length_diff = entites_.size() - predicts_.size();
+  while (length_diff > 0) {
+    predicts_.push_back({});
+    --length_diff;
+  }
   return 0;
 }
 
 void Engine::GenerateBackgroundStars(unsigned count) {
+  background_stars_.clear();
   for (auto i = 0; i < count; ++i) {
     double x = rand() % (size_x / 2);
     if (rand() % 2) {
@@ -86,7 +198,7 @@ void Engine::GenerateBackgroundStars(unsigned count) {
       y *= -1;
     }
     background_stars_.push_back(
-        Planet2D({{.x = x, .y = y}, 1, M_PI, {1.0, 1.0, 1.0, 1.0}}));
+        Planet2D({{.x = x, .y = y}, 0.5f, 1.0, {1.0, 1.0, 1.0, 1.0}}));
   }
 }
 
@@ -128,7 +240,6 @@ void Engine::ShuffleBackground() {
 int Engine::EngineInit(int sx, int sy, RGBAf bgcolor) {
   size_x = sx;
   size_y = sy;
-  GenerateBackgroundStars(bg_stars);
   int argc = 0;
   glutInit(&argc, nullptr);
   glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB);
@@ -152,11 +263,15 @@ int Engine::EngineInit(int sx, int sy, RGBAf bgcolor) {
   predicts_ = std::vector<std::vector<Position2D>>(entites_.size());
 
   glutDisplayFunc(EngineDisplay);
-  glutIdleFunc(EngineIdle);
   glutTimerFunc(FLAGS_recalc_millisec, EngineTimer, RECALC);
   glutTimerFunc(FLAGS_draw_interval * FLAGS_recalc_millisec, EngineTimer,
                 REDRAW);
   glutKeyboardFunc(EngineKeyboardFunc);
+  glutMouseFunc(EngineMouseFunc);
+  // glutReshapeFunc(EngineReshapeFunc);
+  // glutReshapeWindow(size_x, size_y);
+  GenerateBackgroundStars(bg_stars);
+  SPDLOG_TRACE("finish init");
   return 0;
 }
 
@@ -173,24 +288,18 @@ int Engine::Display() {
     DrawCircle(en.p.Position(), r, color);
 
     const unsigned kAlphaIndex = 3;
-    std::get<kAlphaIndex>(color) *= 0.05;
+    std::get<kAlphaIndex>(color) *= 0.5;
     const auto tracks = en.p.Tracks();
     const auto track_sz = tracks.size();
-    r *= 0.7;
+    r *= 0.07;
     const auto radius_grad = r / track_sz;
     const auto alpha_grad = std::get<kAlphaIndex>(color) / track_sz;
-    auto iter = tracks.begin();
-    for (auto i = 0u; i < track_sz; ++i) {
-      DrawCircle(*iter, r, color);
 
-      std::advance(iter, 1);
-      r -= radius_grad;
-      std::get<kAlphaIndex>(color) -= alpha_grad;
-    }
+    DrawCurve(tracks, color, r);
 
     color = en.p.ColorUc();
     std::get<kAlphaIndex>(color) *= 0.2;
-    DrawCurve(predicts_[i], color);
+    DrawCurve(predicts_[i], color, 1.0f);
   }
 
   ShuffleBackground();
@@ -266,11 +375,14 @@ int Engine::Recalc() {
 
     pos.x += deltas[i][0];
     pos.y += deltas[i][1];
-    entites_[i].p.Move(pos);
+    auto bb_ret = -1;
+    if (deltas[i][0] != 0 || deltas[i][1] != 0) {
+      entites_[i].p.Move(pos);
+      bb_ret = BorderBounce(entites_[i]);
+    }
     entites_[i].velocity.force_axis_x_ += deltas[i][2];
     entites_[i].velocity.force_axis_y_ += deltas[i][3];
 
-    auto bb_ret = BorderBounce(entites_[i]);
     SPDLOG_INFO(
         "planet[{}] now at[{:.3f},{:.3f}] velocity[{:.3f},{:.3f}]={:.3f}, "
         "dS=[{:.3f},{:.3f}], dV=[{:.3f},{:.3f}], border_bouce[{}]",
@@ -280,6 +392,7 @@ int Engine::Recalc() {
   }
 
   // calculate predictions
+  predicts_.resize(entites_.size());
   for (auto i = 0u; i < entites_.size(); ++i) {
     predicts_[i].clear();
     auto future_entities = entites_;

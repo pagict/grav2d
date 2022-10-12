@@ -1,33 +1,50 @@
 {
   "galaxy": {
-    "width": 2800,
-    "height": 1400,
+    "width": 1400,
+    "height": 960,
     "background": {
       "red": 0.1,
       "green": 0.1,
       "blue": 0.1,
       "alpha": 0.8,
-      "stars": 300    // define number of  background stars
+      "stars": 1400    // define number of  background stars
     }
   },
   "planets": [
-    {
-      "position": {
-        "x": 0,
-        "y": 0,
-        "radius": 10
-      },
-      "color": {
-        "red": 1,
-        "green": 1,
-        "blue": 1,
-        "alpha": 1
-      },
-      "velocity": {
-        "x": 400.0,
-        "y": 0
-      }
-    },
+    // {
+    //   "position": {
+    //     "x": 0,
+    //     "y": 0,
+    //     "radius": 10
+    //   },
+    //   "color": {
+    //     "red": 1,
+    //     "green": 1,
+    //     "blue": 1,
+    //     "alpha": 1
+    //   },
+    //   "velocity": {
+    //     "x": 7.0,
+    //     "y": 0
+    //   }
+    // },
+    //   {
+    //   "position": {
+    //     "x": 300,
+    //     "y": 100,
+    //     "radius": 50
+    //   },
+    //   "color": {
+    //     "red": 0,
+    //     "green": 1,
+    //     "blue": 0.2,
+    //     "alpha": 1
+    //   },
+    //   "velocity": {
+    //     "x": 0,
+    //     "y": 0
+    //   }
+    // },
     {
       "position": {
         "x": -100,
@@ -40,45 +57,28 @@
         "blue": 0,
         "alpha": 1
       },
-      "density": 80,
-      "velocity": {
-        "x": 0,
-        "y": 205
-      }
-    },
-    {
-      "position": {
-        "x": 100,
-        "y": 100,
-        "radius": 50
-      },
-      "color": {
-        "red": 0,
-        "green": 1,
-        "blue": 0.5,
-        "alpha": 0.2
-      },
       "velocity": {
         "x": 0,
         "y": 0
       }
-    },
-    {
-      "position": {
-        "x": -100,
-        "y": 500,
-        "radius": 20
-      },
-      "color": {
-        "red": 1,
-        "green": 0,
-        "blue": 0.5,
-        "alpha": 0.2
-      },
-      "velocity": {
-        "x": 50,
-        "y": 23
-      }
     }
+  
+    // {
+    //   "position": {
+    //     "x": -100,
+    //     "y": 500,
+    //     "radius": 20
+    //   },
+    //   "color": {
+    //     "red": 1,
+    //     "green": 0,
+    //     "blue": 0.5,
+    //     "alpha": 0.2
+    //   },
+    //   "velocity": {
+    //     "x": 50,
+    //     "y": 23
+    //   }
+    // }
   ]
 }

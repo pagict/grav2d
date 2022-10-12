@@ -71,10 +71,11 @@ int main(int argc, char **argv) {
     if (p.HasMember("density")) {
       density = p["density"].GetDouble();
     }
-    auto weight = radius * radius * M_PI * density;
 
-    Planet2D p2d{
-        {.x = pos_x, .y = pos_y}, radius, weight, {redf, greenf, bluef, alpha}};
+    Planet2D p2d{{.x = pos_x, .y = pos_y},
+                 radius,
+                 density,
+                 {redf, greenf, bluef, alpha}};
     VectorForce2D v2d(v_x, v_y);
 
     engine.AddPlanet(std::move(p2d), std::move(v2d));

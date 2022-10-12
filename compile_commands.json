@@ -2,7 +2,7 @@
   {
     "arguments": [
       "/usr/bin/c++",
-      "-std=c++14",
+      "-std=c++17",
       "-DSPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_TRACE",
       "-I/opt/homebrew/include/",
       "-O0",
@@ -15,5 +15,73 @@
     "directory": "/Users/premium/Developer/grav2d",
     "file": "/Users/premium/Developer/grav2d/engine.cc",
     "output": "/Users/premium/Developer/grav2d/engine.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/c++",
+      "-std=c++17",
+      "-DSPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_TRACE",
+      "-I/opt/homebrew/include/",
+      "-O0",
+      "-g3",
+      "-c",
+      "-o",
+      "grav2d.o",
+      "grav2d.cc"
+    ],
+    "directory": "/Users/premium/Developer/grav2d",
+    "file": "/Users/premium/Developer/grav2d/grav2d.cc",
+    "output": "/Users/premium/Developer/grav2d/grav2d.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/c++",
+      "-std=c++17",
+      "-DSPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_TRACE",
+      "-I/opt/homebrew/include/",
+      "-O0",
+      "-g3",
+      "-c",
+      "-o",
+      "opengl_utility.o",
+      "opengl_utility.cc"
+    ],
+    "directory": "/Users/premium/Developer/grav2d",
+    "file": "/Users/premium/Developer/grav2d/opengl_utility.cc",
+    "output": "/Users/premium/Developer/grav2d/opengl_utility.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/c++",
+      "-std=c++17",
+      "-DSPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_TRACE",
+      "-I/opt/homebrew/include/",
+      "-O0",
+      "-g3",
+      "-c",
+      "-o",
+      "planet_2d.o",
+      "planet_2d.cc"
+    ],
+    "directory": "/Users/premium/Developer/grav2d",
+    "file": "/Users/premium/Developer/grav2d/planet_2d.cc",
+    "output": "/Users/premium/Developer/grav2d/planet_2d.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/c++",
+      "-std=c++17",
+      "-DSPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_TRACE",
+      "-I/opt/homebrew/include/",
+      "-O0",
+      "-g3",
+      "-c",
+      "-o",
+      "vector_force_2d.o",
+      "vector_force_2d.cc"
+    ],
+    "directory": "/Users/premium/Developer/grav2d",
+    "file": "/Users/premium/Developer/grav2d/vector_force_2d.cc",
+    "output": "/Users/premium/Developer/grav2d/vector_force_2d.o"
   }
 ]
